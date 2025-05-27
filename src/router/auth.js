@@ -36,13 +36,16 @@ router.post('/createAccount', upload.single('image'), async(req, res, next) => {
       }
 
       const s3Filename = await uploadProfileImage(req.body.email, req.file.originalname, req.file.buffer);
-      const documentData = new Document({
+      const documentData = {
         name: req.file.originalname,
         filename: s3Filename,
         email: req.body.email,
-      });
+      };
       
-      const savedDocument = await documentData.save();
+      const savedDocument = await Document.create(documentData);
+      if (!savedDocument) {
+        return res.status(500).json({ message: "Failed to save document" });
+      }
       
       const userData = {
         email: req.body.email,
@@ -53,9 +56,7 @@ router.post('/createAccount', upload.single('image'), async(req, res, next) => {
         password: req.body.password,
       };
 
-      const users = new User(userData)
-
-      const savedUser = await users.save();
+      const savedUser = await User.create(userData);
       if (!savedUser) {
         return res.status(500).json({ message: "Failed to save user" });
       }

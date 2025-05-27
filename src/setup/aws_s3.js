@@ -39,7 +39,6 @@ export async function uploadFileToS3(filename, data){
         Key: filename,
         Body: data
     }
-
     try{
         await s3.upload(params).promise();
         return filename;

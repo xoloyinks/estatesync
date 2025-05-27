@@ -6,7 +6,7 @@ import 'dotenv/config';
 mongoose.set('bufferCommands', false);
 
 async function setupMongoose() {
-  const MONGO_URI = process.env.MONGODB_URI;
+  const MONGO_URI = 'mongodb+srv://xoloyinks:kQ00oXqCJ1oM9U1c@cluster0.wv9gyyj.mongodb.net/?appName=Cluster0';
   const db = 'estatesync'
   if (!MONGO_URI) {
     throw new Error("MONGODB_URI is not defined in the environment variables");
