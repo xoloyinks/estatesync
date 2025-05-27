@@ -1,10 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import routes from './src/router/index.js'
-
+import connectDb from './mongo.js';
 
 const server = express();
-
+const PORT = process.env.PORT || 3001
 server.use(cors());
 server.use(express.json());
 
@@ -14,6 +14,7 @@ server.get('/', (req, res) => {
 
 server.use('/api', routes);
 
-server.listen(3001, () => {
-    console.log('Server is running on port 3001');
+server.listen(PORT, () => {
+    connectDb()
+    console.log(`Connected to port ${PORT}`);
 });

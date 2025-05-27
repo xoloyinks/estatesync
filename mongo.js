@@ -1,65 +1,23 @@
 import mongoose from "mongoose";
-import 'dotenv/config';
+import "dotenv/config";
 
-// mongoose.set('strictQuery', true);
-
-mongoose.set('bufferCommands', false);
-
-async function setupMongoose() {
-  const MONGO_URI = 'mongodb+srv://xoloyinks:kQ00oXqCJ1oM9U1c@cluster0.wv9gyyj.mongodb.net/?appName=Cluster0';
-  const db = 'estatesync'
-  if (!MONGO_URI) {
-    throw new Error("MONGODB_URI is not defined in the environment variables");
-  }
-
-  // Add connection event listeners for debugging
-  mongoose.connection.on("connected", () => {
-    console.log("Mongoose connected to MongoDB");
-  });
-
-  mongoose.connection.on("error", (err) => {
-    console.error("Mongoose connection error:", err);
-  });
-
-  mongoose.connection.on("disconnected", () => {
-    console.log("Mongoose disconnected from MongoDB");
-  });
-
-  mongoose.connection.on("reconnected", () => {
-    console.log("Mongoose reconnected to MongoDB");
-  });
-
-  mongoose.connection.on("connecting", () => {
-    console.log("Mongoose is connecting to MongoDB");
-  });
-
-  // Log readyState periodically to debug
-  setInterval(() => {
-    console.log(`Mongoose connection readyState: ${mongoose.connection.readyState}`);
-  }, 5000);
-
-  // Heartbeat to prevent idle timeouts
-  setInterval(async () => {
-    if (mongoose.connection.readyState === 1) {
-      try {
-        await mongoose.connection.db.command({ ping: 1 });
-        console.log("MongoDB heartbeat successful");
-      } catch (error) {
-        console.error("MongoDB heartbeat failed:", error);
-      }
-    }
-  }, 300000); 
-
+export default async function connectDb() {
+  let dbUri = process.env?.MONGODB_URI ?? "";
   try {
-    await mongoose.connect(MONGO_URI, {dbName: db});
-    console.log("MongoDB connected successfully");
+    await mongoose.connect(dbUri, {
+      //useNewUrlParser: true,
+    });
+    console.log(dbUri);
   } catch (err) {
-    console.error("MongoDB connection error:", err);
-    throw err; // Re-throw the error to handle it in the calling code
+    mongoose.createConnection(dbUri);
   }
+
+  const info = mongoose.connections[0];
+
+  mongoose.connection
+    .on("error", () => console.error("Unable to connect to database"))
+    .on("close", () => console.log("Database connection closed.")) // eslint-disable-line no-console
+    .once("open", () =>
+      console.log(`Connected to ${info.host}:${info.port}/${info.name}`)
+    );
 }
-
-// setupMongoose()
-
-// Export the function without calling it here
-export default setupMongoose;
