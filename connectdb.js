@@ -10,7 +10,6 @@ export const connectToDatabase = async () => {
     console.log("Mongoose connection established");
 
     const user = await User.find({}).exec();
-    console.log("user:", user);
 
     return { mongoose };
   } catch (error) {

@@ -1,14 +1,13 @@
-// import("aws-sdk/lib/maintenace_mode_message").then((module) => module.suppress = true)
 import AWS from 'aws-sdk';
-import CONFIG from './config.js';
 import { v4 } from 'uuid'
 import multer from 'multer';
 import 'dotenv/config';
+import Document from '../models/document.js';
 
-const awsS3BucketName =  process.env.AWS_BUCKET_NAME;
-const awsS3Region = process.env.AWS_REGION;
-const awsAccessKeyId = process.env.AWS_ACCESS_KEY;
-const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const awsS3BucketName =  process.env.AWS_BUCKET_NAME || 'estatesync';
+const awsS3Region = process.env.AWS_REGION || 'eu-north-1';
+const awsAccessKeyId = process.env.AWS_ACCESS_KEY || 'AKIA3Z7VAOTHZL6VDQ7E';
+const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || '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';
 
 // console.log("awsS3BucketName:", awsS3Region);
 
@@ -47,30 +46,38 @@ export async function uploadFileToS3(filename, data){
     }
 }
 
-export async function uploadProfileImage(userId, filename, data){
-    return await uploadFileToS3(`profile-image-${userId}-${filename}`, data)
+export async function uploadImage(userId, filename, data) {
+  const cleanedFilename = filename.replace(/\s+/g, '');
+  return await uploadFileToS3(`profile-image-${userId}-${cleanedFilename}`, data);
 }
 
-export function getSignedUrl(filename){
-    if(!filename) return '';
-    try{
-        return s3.getSignedUrl('getObject', {
-            Bucket: awsS3BucketName,
-            Key: filename,
-            Expires: 5 * 60
-        })
-    }catch(err){
-        console.error("Error uploading file to S3: ", err)
+const getDocumentFileName = async (_id) => {
+  if (!_id) return '';
+  
+  try {
+    const doc = await Document.findById(_id);
+    if (!doc) return '';
+    return doc.filename; // return only the filename
+  } catch (err) {
+    console.error('Error fetching document by _id:', err);
+    return '';
+  }
+};
 
-    }
+// Returns a public URL (not signed)
+export async function getObjectUrl(filename) {
+    if (!filename) return '';
+    const docfilename = await getDocumentFileName(filename);
+    // console.log(`https://${awsS3BucketName}.s3.${awsS3Region}.amazonaws.com/${docfilename}`)
+    return `https://${awsS3BucketName}.s3.${awsS3Region}.amazonaws.com/${docfilename}`;
 }
 
-export function getDocumentUrl({ name, filename }) {
-    if (!filename) return { url: '' };
-    const url = getSignedUrl(filename);
-    if (!url) return { url: '' };
-    return { url, name };
+// If you want a named wrapper like "getDocumentUrl"
+export async function getDocumentUrl(filename) {
+    const url = await getObjectUrl(filename);
+    return url;
 }
+
 
 // Save a document to the database and return its _id
 async function saveDocumentToDBAndGetId(name, data) {
@@ -84,3 +91,5 @@ async function saveDocumentToDBAndGetId(name, data) {
   }
 }
 
+
+// getDocumentUrl('17e0c739-b66e-48a7-82be-40228a21f182-profile-image-xoloyinks@gmail.com-20240429_114037.jpg');

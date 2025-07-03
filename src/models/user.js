@@ -19,12 +19,20 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
   image: {
-    type: String, // Currently an array of strings (e.g., URLs or filenames)
+    type: String, 
     required: true,
+  },
+  gender: {
+    type: String,
+    required: true
   },
   password: {
     type: String,
     required: true,
+  },
+  role: {
+    type: String,
+    required: true
   },
   createdAt: {
     type: Date,

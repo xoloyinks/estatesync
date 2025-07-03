@@ -17,13 +17,29 @@ const propertySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  image: {
-    type: Array, // Currently an array of strings (e.g., URLs or filenames)
+  images: {
+    type: Array, 
     required: true,
   },
-  type: {
+  agent:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    autopopulate: true, // Automatically populate the agent field with User data
+  },
+  mode: {
     type: String,
     required: true,
+  },
+  bedrooms: {
+    type: String,
+    required: true,
+  },
+  acquired: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    autopopulate: true,
+    required: false, // Optional field
   },
   createdAt: {
     type: Date,
