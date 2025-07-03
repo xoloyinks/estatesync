@@ -2,6 +2,7 @@ import express from "express";
 import https from "https";
 import jwtMiddleware from "../middlewares/check_user.js";
 import dotenv from "dotenv";
+import crypto from "crypto";
 
 dotenv.config({
   path: "../../.env",
@@ -206,14 +207,64 @@ router.post("/subscribe", jwtMiddleware, async (req, res) => {
 //   }
 // }
 
+// router.post('/webhook', (req, res) => {
+//      // Verify Paystack signature
+//   const secret = process.env.PAYSTACK_SECRET_KEY;
+//   if (!secret) {
+//     console.error('PAYSTACK_SECRET_KEY is not set');
+//     return res.status(500).json({ message: 'Server configuration error' });
+//   }
+
+//   const hash = crypto
+//     .createHmac('sha512', secret)
+//     .update(req.rawBody)
+//     .digest('hex');
+//   const signature = req.headers['x-paystack-signature'];
+
+//   if (!signature || signature !== hash) {
+//     console.error('Invalid Paystack signature:', { received: signature, expected: hash });
+//     return res.status(400).json({ message: 'Invalid signature' });
+//   }
+
+//   const event = req.body;
+//   // Log the full event for debugging
+//   console.log('Webhook received:', JSON.stringify(event, null, 2));
+//   console.log('Event type:', event.event);
+
+//   if (event.event === 'subscription.create') {
+//     // Handle subscription creation
+//     console.log('Subscription created:', event.data);
+//     // Example: Update payment data (e.g., save to database)
+//     const payment = {
+//       created_at: event.data.created_at || new Date().toISOString(),
+//       next_payment_date: event.data.next_payment_date || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+//     };
+//     console.log('Updated payment:', payment);
+//     // TODO: Save payment to database or state for use in frontend
+//     return res.status(200).json({ message: 'Subscription created' });
+//   } else if (event.event === 'charge.success') {
+//     // Handle successful charge
+//     console.log('Payment successful:', event.data);
+//     return res.status(200).json({ message: 'Payment successful' });
+//   } else if (event.event === 'charge.failed') {
+//     // Handle failed charge
+//     console.log('Payment failed:', event.data);
+//     return res.status(400).json({ message: 'Payment failed' });
+//   } else {
+//     // Handle other events
+//     console.log('Unhandled event:', event.event, event.data);
+//     return res.status(200).json({ message: 'Event received' });
+//   }
+// });
+
 router.post('/webhook', (req, res) => {
-     // Verify Paystack signature
   const secret = process.env.PAYSTACK_SECRET_KEY;
   if (!secret) {
     console.error('PAYSTACK_SECRET_KEY is not set');
     return res.status(500).json({ message: 'Server configuration error' });
   }
 
+  // Verify Paystack signature
   const hash = crypto
     .createHmac('sha512', secret)
     .update(req.rawBody)
@@ -225,35 +276,12 @@ router.post('/webhook', (req, res) => {
     return res.status(400).json({ message: 'Invalid signature' });
   }
 
-  const event = req.body;
   // Log the full event for debugging
-  console.log('Webhook received:', JSON.stringify(event, null, 2));
-  console.log('Event type:', event.event);
+  const event = req.body;
+  console.log('Paystack Webhook Event:', JSON.stringify(event, null, 2));
 
-  if (event.event === 'subscription.create') {
-    // Handle subscription creation
-    console.log('Subscription created:', event.data);
-    // Example: Update payment data (e.g., save to database)
-    const payment = {
-      created_at: event.data.created_at || new Date().toISOString(),
-      next_payment_date: event.data.next_payment_date || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-    };
-    console.log('Updated payment:', payment);
-    // TODO: Save payment to database or state for use in frontend
-    return res.status(200).json({ message: 'Subscription created' });
-  } else if (event.event === 'charge.success') {
-    // Handle successful charge
-    console.log('Payment successful:', event.data);
-    return res.status(200).json({ message: 'Payment successful' });
-  } else if (event.event === 'charge.failed') {
-    // Handle failed charge
-    console.log('Payment failed:', event.data);
-    return res.status(400).json({ message: 'Payment failed' });
-  } else {
-    // Handle other events
-    console.log('Unhandled event:', event.event, event.data);
-    return res.status(200).json({ message: 'Event received' });
-  }
+  // Respond to Paystack
+  res.status(200).json({ received: true });
 });
 
 

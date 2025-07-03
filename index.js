@@ -48,10 +48,18 @@ server.get("/", (req, res) => {
   res.send("Welcome to the Server!");
 });
 
+// Middleware to capture raw body for Paystack signature verification
+function rawBodySaver(req, res, buf) {
+  if (buf && buf.length) {
+    req.rawBody = buf.toString("utf8");
+  }
+}
+
 server.use(cors());
-server.use(express.json({ limit: "100mb" }));
+server.use(express.json({ limit: "100mb", verify: rawBodySaver }));
 server.use(express.urlencoded({ limit: "100mb", extended: true }));
 server.use("/api", routes);
+
 
 // Start HTTP server
 server_io.listen(PORT, () => {
