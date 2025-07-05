@@ -125,7 +125,6 @@ router.post('/webhook', async (req, res) => {
         user: updateRole._id,
         plan_code: eventObj.plan.plan_code,
         customer_code: eventObj.customer.customer_code,
-        subscription_code: eventObj.subscription_code,
         paid_at: eventObj.paid_at,
         amount: eventObj.plan.amount / 100, // Convert kobo to naira
         next_payment_date: eventObj.next_payment_date,

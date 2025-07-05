@@ -6,10 +6,6 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  subscription_code: {
-    type: String,
-    required: true,
-  },
     customer_code: {
         type: String,
         required: true,
