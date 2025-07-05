@@ -3,7 +3,6 @@ import https from "https";
 import jwtMiddleware from "../middlewares/check_user.js";
 import dotenv from "dotenv";
 import crypto from "crypto";
-
 dotenv.config({
   path: "../../.env",
   override: false,
@@ -11,25 +10,23 @@ dotenv.config({
 
 const router = express.Router();
 
-router.post("/subscribe", jwtMiddleware, async (req, res) => {
-  const { name, interval, amount, email } = req.body;
+router.post("/", jwtMiddleware, async (req, res) => {
+  const { email, amount, planCode } = req.body;
 
-  // Validate request body
-  if (!name || !interval || !amount || !email) {
-    return res.status(400).json({ message: "Missing required fields: name, interval, amount, email" });
+  if (!email || !amount || !planCode) {
+    return res.status(400).json({ message: "Missing required fields: email, amount, planCode" });
   }
 
-  // Step 1: Create Paystack Plan
-  const planParams = JSON.stringify({
-    name,
-    interval,
-    amount: Number(amount) * 100, // Convert to kobo
+  const transactionParams = JSON.stringify({
+    email,
+    amount: Number(amount) * 100,
+    plan: planCode,
   });
 
-  const planOptions = {
+  const options = {
     hostname: "api.paystack.co",
     port: 443,
-    path: "/plan",
+    path: "/transaction/initialize",
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -37,91 +34,32 @@ router.post("/subscribe", jwtMiddleware, async (req, res) => {
     },
   };
 
-  // Create a promise for the plan creation request
-  const createPlan = () =>
-    new Promise((resolve, reject) => {
-      const request = https.request(planOptions, (response) => {
-        let data = "";
-        response.on("data", (chunk) => {
-          data += chunk;
+  const request = https.request(options, (response) => {
+    let data = "";
+    response.on("data", (chunk) => (data += chunk));
+    response.on("end", () => {
+      const parsed = JSON.parse(data);
+      if (response.statusCode === 200) {
+        return res.status(200).json({
+          message: "Subscription initialized",
+          data: parsed.data,
         });
-
-        response.on("end", () => {
-          const parsedData = JSON.parse(data);
-          if (response.statusCode === 201) {
-            resolve(parsedData);
-          } else {
-            reject(new Error(`Failed to create plan: ${JSON.stringify(parsedData)}`));
-          }
+      } else {
+        return res.status(response.statusCode).json({
+          message: "Failed to initialize transaction",
+          error: parsed,
         });
-      });
-
-      request.on("error", (error) => reject(error));
-      request.write(planParams);
-      request.end();
+      }
     });
+  });
 
-  // Step 2: Initialize Transaction for Subscription
-  const initializeTransaction = (planCode) =>
-    new Promise((resolve, reject) => {
-      const transactionParams = JSON.stringify({
-        email,
-        amount: Number(amount) * 100, // Convert to kobo
-        plan: planCode, // Use the plan_code from the plan creation
-      });
+  request.on("error", (error) => {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
+  });
 
-      const transactionOptions = {
-        hostname: "api.paystack.co",
-        port: 443,
-        path: "/transaction/initialize",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        },
-      };
-
-      const request = https.request(transactionOptions, (response) => {
-        let data = "";
-        response.on("data", (chunk) => {
-          data += chunk;
-        });
-
-        response.on("end", () => {
-          const parsedData = JSON.parse(data);
-          if (response.statusCode === 200) {
-            resolve(parsedData);
-          } else {
-            reject(new Error(`Failed to initialize transaction: ${JSON.stringify(parsedData)}`));
-          }
-        });
-      });
-
-      request.on("error", (error) => reject(error));
-      request.write(transactionParams);
-      request.end();
-    });
-
-  try {
-    // Create plan
-    const planResponse = await createPlan();
-    const planCode = planResponse.data.plan_code; // Extract plan_code
-
-    // Initialize transaction with the plan_code
-    const transactionResponse = await initializeTransaction(planCode);
-
-    // Return the subscription initialization response
-    return res.status(201).json({
-      message: "Subscription created successfully",
-      data: transactionResponse,
-    });
-  } catch (error) {
-    console.error("Error:", error.message);
-    return res.status(500).json({
-      message: "Failed to create subscription",
-      error: error.message,
-    });
-  }
+  request.write(transactionParams);
+  request.end();
 });
 
 // webhook to verify payment

@@ -41,6 +41,10 @@ const propertySchema = new mongoose.Schema({
     autopopulate: true,
     required: false, // Optional field
   },
+  planCode:{
+    type: String,
+    required: true, // Optional field
+  },
   createdAt: {
     type: Date,
     default: Date.now,

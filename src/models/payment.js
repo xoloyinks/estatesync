@@ -27,6 +27,19 @@ const paymentSchema = new mongoose.Schema({
     paid_at: {
         type: Date,
     },
+    method: {
+        type: String,
+        enum: ['card', 'bank_transfer', 'mobile_money', 'paystack'],
+        required: true,
+    },
+    status: {
+        type: String,
+        required: true,
+    },
+    reference: {
+        type: String,
+        required: true,
+    },
     next_payment_date: {
         type: Date,
     },

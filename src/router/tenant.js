@@ -106,6 +106,41 @@ router.post('/add', jwtMiddleware, async (req, res) => {
 
 })
 
+router.get('/paymentHistory/:id', jwtMiddleware, async (req, res) => {
+    try {
+        const payments = await Payment.find({user: req.params.id});
+        if (!payments || payments.length === 0) {
+            return res.status(404).json({ message: "No payment history found for this user" });
+        }
+
+        const data = await Promise.all(
+            payments.map(async (payment) => {
+                return {
+                    plan_code: payment.plan_code,
+                    subscription_code: payment.subscription_code,
+                    customer_code: payment.customer_code,
+                    amount: payment.amount,
+                    paid_at: payment.paid_at,
+                    method: payment.method,
+                    reference: payment.reference,
+                    status: payment.status,
+                    next_payment_date: payment.next_payment_date,
+                    user: await getUser(payment.user),
+                };
+            })
+        );
+
+        res.status(200).json({
+            message: "Payment history retrieved successfully",
+            data
+        });
+    } catch (err) {
+        console.error('Error fetching payment history:', err);
+        return res.status(500).json({ message: "Internal server error", error: err.message });
+
+    }
+});
+
 
 router.get('/payment/:id', jwtMiddleware, async (req, res) => {
     try{
@@ -120,6 +155,9 @@ router.get('/payment/:id', jwtMiddleware, async (req, res) => {
                 customer_code: payment.customer_code,
                 amount: payment.amount,
                 paid_at: payment.paid_at,
+                method: payment.method,
+                reference: payment.reference,
+                status: payment.status,
                 next_payment_date: payment.next_payment_date,
                 user: await getUser(payment.user)
         }
@@ -132,7 +170,6 @@ router.get('/payment/:id', jwtMiddleware, async (req, res) => {
     }catch(err){
         return res.status(500).json({ message: "Internal server error", error: err.message });
     }
-
 })
 
 

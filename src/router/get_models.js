@@ -39,7 +39,8 @@ export async function getProperty(property) {
             mode: property.mode || '',
             bedrooms: property.bedrooms || 0,
             createdAt: property.createdAt,
-            acquired: property?.acquired || ''
+            acquired: property?.acquired || '',
+            planCode: property.planCode || ''
         };
     } catch (err) {
         console.error('Error in getProperty:', err);
