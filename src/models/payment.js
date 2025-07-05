@@ -36,10 +36,6 @@ const paymentSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    reference: {
-        type: String,
-        required: true,
-    },
     next_payment_date: {
         type: Date,
     },

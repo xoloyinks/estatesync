@@ -6,7 +6,6 @@ import crypto from "crypto";
 import User from "../models/user.js";
 import Tenant from "../models/tenant.js";
 import Property from "../models/properties.js";
-import { ref } from "process";
 dotenv.config({
   path: "../../.env",
   override: false,
