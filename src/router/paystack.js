@@ -87,8 +87,8 @@ router.post('/webhook', async (req, res) => {
   }
 
   const event = req.body;
-  console.log(event.event);
-  if (event && event.event === 'charge.success') {
+  console.log(event);
+  if (event && event.event === 'charge.succsess') {
     try {
       const eventObj = event.data;
       // Update user role to tenant
