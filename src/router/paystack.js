@@ -7,6 +7,7 @@ import User from "../models/user.js";
 import Tenant from "../models/tenant.js";
 import Property from "../models/properties.js";
 import Payment from "../models/payment.js";
+import { ref } from "process";
 dotenv.config({
   path: "../../.env",
   override: false,
@@ -88,7 +89,7 @@ router.post('/webhook', async (req, res) => {
 
   const event = req.body;
   console.log(event);
-  if (event && event.event === 'charge.succsess') {
+  if (event && event.event === 'charge.success') {
     try {
       const eventObj = event.data;
       // Update user role to tenant
@@ -125,11 +126,12 @@ router.post('/webhook', async (req, res) => {
         plan_code: eventObj.plan.plan_code,
         customer_code: eventObj.customer.customer_code,
         subscription_code: eventObj.subscription_code,
-        paid_at: new Date(eventObj.createdAt),
+        paid_at: eventObj.paid_at,
         amount: eventObj.plan.amount / 100, // Convert kobo to naira
-        next_payment_date: new Date(eventObj.next_payment_date),
+        next_payment_date: eventObj.next_payment_date,
         status: eventObj.status,
-        method: eventObj.authorization.channel,
+        method: eventObj.channel,
+        reference: eventObj.reference
       };
 
       const paymentRecord = await Payment.create(paymentData);
