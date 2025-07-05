@@ -10,13 +10,18 @@ import { jwtVerify } from "./src/utils/jwt.js";
 const server = express();
 const PORT = process.env.PORT || 3001;
 
+const allowedOrigins = [
+  "https://estate-nine-orcin.vercel.app",
+  "http://localhost:3000"
+];
+
 // Create HTTP server
 const server_io = createServer(server);
 
 // Initialize Socket.IO with custom path and CORS
 const io = new socketIo(server_io, {
   cors: {
-    origin: "*", // Adjust to your frontend URL in production (e.g., http://localhost:3000)
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PATCH", "DELETE"],
   },
   path: "/api/socket.io",
@@ -55,7 +60,13 @@ function rawBodySaver(req, res, buf) {
   }
 }
 
-server.use(cors());
+server.use(cors(
+  {
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PATCH", "DELETE"],
+    credentials: true, // Allow cookies to be sent
+  }
+));
 server.use(express.json({ limit: "100mb", verify: rawBodySaver }));
 server.use(express.urlencoded({ limit: "100mb", extended: true }));
 server.use("/api", routes);
