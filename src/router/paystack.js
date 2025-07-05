@@ -3,6 +3,10 @@ import https from "https";
 import jwtMiddleware from "../middlewares/check_user.js";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import User from "../models/user.js";
+import Tenant from "../models/tenant.js";
+import Property from "../models/properties.js";
+import { ref } from "process";
 dotenv.config({
   path: "../../.env",
   override: false,
@@ -67,135 +71,7 @@ router.post("/", jwtMiddleware, async (req, res) => {
 // create tenant document and set status to paid
 // create a new doc in payment collection with encrypted user id, plan_code, customer_code, subscription_code, paid at date, amount, next payment date, 
 
-// {
-//   "event": "charge.success",
-//   "data": {
-//     "id": 302961,
-//     "domain": "test",
-//     "status": "success",
-//     "reference": "j2c643tbr6",
-//     "amount": 10000,
-//     "currency": "NGN",
-//     "paid_at": "2025-07-03T19:05:25.000Z",
-//     "created_at": "2025-07-03T19:05:00.000Z",
-//     "channel": "card",
-//     "ip_address": "192.168.1.1",
-//     "metadata": {
-//       "custom_fields": [
-//         {
-//           "display_name": "Order ID",
-//           "variable_name": "order_id",
-//           "value": "12345"
-//         }
-//       ]
-//     },
-//     "authorization": {
-//       "authorization_code": "AUTH_8dfhjjdt",
-//       "bin": "539983",
-//       "last4": "1234",
-//       "exp_month": "12",
-//       "exp_year": "2026",
-//       "channel": "card",
-//       "card_type": "visa",
-//       "bank": "Test Bank",
-//       "country_code": "NG",
-//       "brand": "visa",
-//       "reusable": true,
-//       "signature": "SIG_xxxxxxxxxxxxxxxxxxxx"
-//     },
-//     "customer": {
-//       "id": 123456,
-//       "first_name": "John",
-//       "last_name": "Doe",
-//       "email": "john.doe@example.com",
-//       "customer_code": "CUS_1psu1flkeh1dzm8",
-//       "phone": "+2341234567890",
-//       "risk_action": "default"
-//     },
-//     "plan": {
-//       "id": 78910,
-//       "name": "Monthly Premium Plan",
-//       "plan_code": "PLN_tq8ur7pqz80fbpi",
-//       "amount": 10000,
-//       "interval": "monthly",
-//       "currency": "NGN"
-//     },
-//     "subscription": {
-//       "subscription_code": "SUB_vsyqdmlzble3uii",
-//       "status": "active",
-//       "next_payment_date": "2025-08-03T19:05:25.000Z",
-//       "createdAt": "2025-07-03T18:00:00.000Z"
-//     },
-//     "log": {
-//       "time_spent": 25,
-//       "attempts": 1,
-//       "authentication": "pin",
-//       "errors": 0,
-//       "success": true,
-//       "mobile": false,
-//       "input": [],
-//       "history": [
-//         {
-//           "type": "action",
-//           "message": "Attempted to pay with card",
-//           "time": 25
-//         }
-//       ]
-//     }
-//   }
-// }
-
-// router.post('/webhook', (req, res) => {
-//      // Verify Paystack signature
-//   const secret = process.env.PAYSTACK_SECRET_KEY;
-//   if (!secret) {
-//     console.error('PAYSTACK_SECRET_KEY is not set');
-//     return res.status(500).json({ message: 'Server configuration error' });
-//   }
-
-//   const hash = crypto
-//     .createHmac('sha512', secret)
-//     .update(req.rawBody)
-//     .digest('hex');
-//   const signature = req.headers['x-paystack-signature'];
-
-//   if (!signature || signature !== hash) {
-//     console.error('Invalid Paystack signature:', { received: signature, expected: hash });
-//     return res.status(400).json({ message: 'Invalid signature' });
-//   }
-
-//   const event = req.body;
-//   // Log the full event for debugging
-//   console.log('Webhook received:', JSON.stringify(event, null, 2));
-//   console.log('Event type:', event.event);
-
-//   if (event.event === 'subscription.create') {
-//     // Handle subscription creation
-//     console.log('Subscription created:', event.data);
-//     // Example: Update payment data (e.g., save to database)
-//     const payment = {
-//       created_at: event.data.created_at || new Date().toISOString(),
-//       next_payment_date: event.data.next_payment_date || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-//     };
-//     console.log('Updated payment:', payment);
-//     // TODO: Save payment to database or state for use in frontend
-//     return res.status(200).json({ message: 'Subscription created' });
-//   } else if (event.event === 'charge.success') {
-//     // Handle successful charge
-//     console.log('Payment successful:', event.data);
-//     return res.status(200).json({ message: 'Payment successful' });
-//   } else if (event.event === 'charge.failed') {
-//     // Handle failed charge
-//     console.log('Payment failed:', event.data);
-//     return res.status(400).json({ message: 'Payment failed' });
-//   } else {
-//     // Handle other events
-//     console.log('Unhandled event:', event.event, event.data);
-//     return res.status(200).json({ message: 'Event received' });
-//   }
-// });
-
-router.post('/webhook', (req, res) => {
+router.post('/webhook', async (req, res) => {
   const secret = process.env.PAYSTACK_SECRET_KEY;
   if (!secret) {
     console.error('PAYSTACK_SECRET_KEY is not set');
@@ -214,10 +90,60 @@ router.post('/webhook', (req, res) => {
     return res.status(400).json({ message: 'Invalid signature' });
   }
 
-  // Log the full event for debugging
   const event = req.body;
-  console.log('Paystack Webhook Event:', JSON.stringify(event, null, 2));
+  if (event && event.event === 'subscription.create') {
+    try {
+      const eventObj = event.data;
+      // Update user role to tenant
+      const updateRole = await User.findOneAndUpdate(
+        { email: eventObj.customer.email },
+        { role: 'tenant' },
+        { new: true }
+      );
+      if (!updateRole) {
+        console.error('User not found or role update failed:', eventObj.customer.email);
+        return res.status(404).json({ message: 'User not found or role update failed' });
+      }
 
+      const property = await Property.findOne({ planCode: eventObj.plan.plan_code });
+      if (!property) {
+        console.error('No property found for plan code:', eventObj.plan.plan_code);
+        return res.status(404).json({ message: 'No property found for the specified plan code' });
+      }
+
+      const tenantDoc = await Tenant.create({
+        user: updateRole._id,
+        acquiredProperty: property._id,
+        status: 'paid',
+      });
+
+      if (!tenantDoc) {
+        console.error('Failed to create tenant document for user:', updateRole._id);
+        return res.status(500).json({ message: 'Failed to create tenant document' });
+      }
+
+      // Create payment record
+      const paymentData = {
+        user: updateRole._id,
+        plan_code: eventObj.plan.plan_code,
+        customer_code: eventObj.customer.customer_code,
+        subscription_code: eventObj.subscription_code,
+        paid_at: new Date(eventObj.createdAt),
+        amount: eventObj.plan.amount / 100, // Convert kobo to naira
+        next_payment_date: new Date(eventObj.next_payment_date),
+        status: eventObj.status,
+        method: eventObj.authorization.channel,
+      };
+
+      const paymentRecord = await Payment.create(paymentData);
+      if (!paymentRecord) {
+        console.error('Failed to create payment record for user:', updateRole._id);
+        return res.status(500).json({ message: 'Failed to create payment record' });
+      }
+    } catch (err) {
+      console.error('Webhook processing error:', err);
+    }
+  }
   // Respond to Paystack
   res.status(200).json({ received: true });
 });
