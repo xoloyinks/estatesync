@@ -65,10 +65,6 @@ router.post("/", jwtMiddleware, async (req, res) => {
   request.end();
 });
 
-// webhook to verify payment
-// update user role to tenant
-// create tenant document and set status to paid
-// create a new doc in payment collection with encrypted user id, plan_code, customer_code, subscription_code, paid at date, amount, next payment date, 
 
 router.post('/webhook', async (req, res) => {
   const secret = process.env.PAYSTACK_SECRET_KEY;
@@ -90,6 +86,7 @@ router.post('/webhook', async (req, res) => {
   }
 
   const event = req.body;
+  console.log(event.event);
   if (event && event.event === 'subscription.create') {
     try {
       const eventObj = event.data;
@@ -143,6 +140,7 @@ router.post('/webhook', async (req, res) => {
       console.error('Webhook processing error:', err);
     }
   }
+
   // Respond to Paystack
   res.status(200).json({ received: true });
 });
