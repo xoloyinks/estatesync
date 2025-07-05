@@ -6,6 +6,7 @@ import crypto from "crypto";
 import User from "../models/user.js";
 import Tenant from "../models/tenant.js";
 import Property from "../models/properties.js";
+import Payment from "../models/payment.js";
 dotenv.config({
   path: "../../.env",
   override: false,
@@ -132,7 +133,7 @@ router.post('/webhook', async (req, res) => {
       };
 
       const paymentRecord = await Payment.create(paymentData);
-      if (!paymentRecord) {
+      if (!paymentRecord){
         console.error('Failed to create payment record for user:', updateRole._id);
         return res.status(500).json({ message: 'Failed to create payment record' });
       }
