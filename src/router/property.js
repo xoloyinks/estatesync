@@ -6,6 +6,7 @@ import Document from '../models/document.js';
 import Property from '../models/properties.js';
 import { getProperty } from './get_models.js';
 import createPlan from '../setup/plan.js';
+import Agent from '../models/agent.js';
 
 const router = express.Router()
 const app = express();
@@ -82,6 +83,15 @@ router.post('/createProperty', upload.array('images'), jwtMiddleware, async (req
     };
 
     const newProperty = await Property.create(propertyData);
+    const agentData = await Agent.findOne({ user: agent._id })
+    if(!agentData){
+      return res.status(400).json({ message: "Failed to fetch agent data3" });
+    }
+    agentData.assignedProperties.push(newProperty._id);
+    await Agent.updateOne({
+      user: agent._id },
+      { $set: { assignedProperties: agentData.assignedProperties }  }
+    )
     if (!newProperty) {
       return res.status(500).json({ message: "Failed to create property" });
     }

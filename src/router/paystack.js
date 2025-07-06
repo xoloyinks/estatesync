@@ -7,7 +7,8 @@ import User from "../models/user.js";
 import Tenant from "../models/tenant.js";
 import Property from "../models/properties.js";
 import Payment from "../models/payment.js";
-import { ref } from "process";
+import Application from "../models/application.js";
+import { getUser } from "./get_models.js";
 dotenv.config({
   path: "../../.env",
   override: false,
@@ -89,7 +90,7 @@ router.post('/webhook', async (req, res) => {
 
   const event = req.body;
   console.log(event);
-  if (event && event.event === 'charge.success') {
+  if (event && event.event === ('charge.success' || 'subscription.create')) {
     try {
       const eventObj = event.data;
       // Update user role to tenant
@@ -120,6 +121,17 @@ router.post('/webhook', async (req, res) => {
         return res.status(500).json({ message: 'Failed to create tenant document' });
       }
 
+      const applicationData = await Application.updateOne({
+        user: updateRole._id,
+      }, {
+        payment: 'paid'
+      }, { new: true });
+
+      if (!applicationData) {
+        console.error('Failed to update application for user:', updateRole._id);
+        return res.status(500).json({ message: 'Failed to update application' });
+      }
+
       // Create payment record
       const paymentData = {
         user: updateRole._id,
@@ -128,6 +140,7 @@ router.post('/webhook', async (req, res) => {
         paid_at: eventObj.paid_at,
         amount: eventObj.plan.amount / 100, // Convert kobo to naira
         next_payment_date: eventObj.next_payment_date,
+        subscription_code: eventObj.subscription_code, 
         status: eventObj.status,
         method: eventObj.channel,
         reference: eventObj.reference
@@ -145,6 +158,38 @@ router.post('/webhook', async (req, res) => {
 
   // Respond to Paystack
   res.status(200).json({ received: true });
+});
+
+router.get('/paymentHistory', jwtMiddleware, async (req, res) => {
+  try {
+    const payments = await Payment.find({status: 'success'});
+    if (!payments || payments.length === 0) {
+      return res.status(404).json({ message: "No payment history found" });
+    }
+    const data = await Promise.all(
+      payments.map(async (payment) => {
+        return {
+          plan_code: payment.plan_code,
+          subscription_code: payment.subscription_code,
+          customer_code: payment.customer_code,
+          amount: payment.amount,
+          paid_at: payment.paid_at,
+          method: payment.method,
+          reference: payment.reference,
+          status: payment.status,
+          next_payment_date: payment.next_payment_date,
+          user: getUser(payment.user),
+        };
+      })
+    );
+    res.status(200).json({
+      message: "Payment history retrieved successfully",
+      data
+    });
+  } catch (err) {
+    console.error('Error fetching payment history:', err);
+    return res.status(500).json({ message: "Internal server error", error: err.message });
+  }
 });
 
 

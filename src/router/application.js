@@ -31,7 +31,8 @@ router.post('/', jwtMiddleware, upload.single('image'), async (req, res) => {
             proof: await savedDocument._id,
             status,
             code,
-            property
+            property,
+            payment: "pending",
         }
 
         const savedApplication = await Application.create(application);
@@ -61,6 +62,7 @@ router.get('/:id', jwtMiddleware, async (req, res) => {
             status: application.status,
             code: application.code,
             createdAt: application.createdAt,
+            payment: application.payment
         };
 
         // Return the response
@@ -88,6 +90,7 @@ router.get('/', jwtMiddleware, async (req, res) => {
                         status: obj.status,
                         code: obj.code,
                         createdAt: obj.createdAt,
+                        payment: obj.payment
                     }
                 })
             )

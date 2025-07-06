@@ -40,6 +40,11 @@ router.post('/createAccount', upload.single('image'), async(req, res, next) => {
         return res.status(400).json({ message: "Last name, phone number, and password are required" });
       }
 
+      const userExist = await User.findOne({email: req.body.email});
+      if(userExist){
+           return res.status(400).json({ message: "User with email already exists" });
+      }
+
       const savedDocument = await UploadDoc({email: req.body.email, filename: req.file.originalname, buffer: req.file.buffer})
       if (!savedDocument) {
         return res.status(500).json({ message: "Failed to save document" });
@@ -65,6 +70,7 @@ router.post('/createAccount', upload.single('image'), async(req, res, next) => {
         return res.status(500).json({ message: "Failed to save user" });
       }
 
+      const s3Filename = savedDocument._id;
 
       const userWithUrl = {
         ...savedUser.toObject(),

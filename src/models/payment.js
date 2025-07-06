@@ -6,6 +6,10 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  subscription_code: {
+    type: String,
+    required: false,
+  },
     customer_code: {
         type: String,
         required: true,
@@ -38,6 +42,7 @@ const paymentSchema = new mongoose.Schema({
     },
     next_payment_date: {
         type: Date,
+        required: false,
     },
 
 }, {collection: 'payments'});
