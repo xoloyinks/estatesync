@@ -6,9 +6,7 @@ export default async function connectDb() {
   try {
     await mongoose.connect(dbUri, {
       dbName: 'estatesync',
-      //useNewUrlParser: true,
     });
-    // console.log(dbUri);
   } catch (err) {
     mongoose.createConnection(dbUri);
   }

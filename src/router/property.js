@@ -145,6 +145,27 @@ router.get('/:id', async (req, res) => {
     }
 })
 
+// delete property
+router.delete('/:id', jwtMiddleware, async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    // Delete associated documents
+    await Document.deleteMany({ _id: { $in: property.images } });
+
+    // Delete the property
+    await Property.deleteOne({ _id: req.params.id });
+
+    return res.status(200).json({ message: "Property deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting property:", err.message);
+    return res.status(500).json({ message: "Internal server error", error: err.message });
+  }
+});
+
 
 
 export default router;
