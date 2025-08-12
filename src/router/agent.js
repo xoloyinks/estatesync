@@ -14,9 +14,10 @@ app.use(express.json());
 
 router.post('/add', upload.single('image'), jwtMiddleware, async (req, res) => {
   try {
-    const { first_name, last_name, email, phone_number, password, properties, role, gender } = req.body;
+    const { first_name, last_name, email, phone_number, password, role, gender } = req.body;
     const image = req.file;
 
+    // Validate required fields
     if (!first_name || !last_name || !email || !phone_number || !password || !role || !image) {
       return res.status(400).json({ message: "Missing required fields" });
     }
@@ -35,18 +36,22 @@ router.post('/add', upload.single('image'), jwtMiddleware, async (req, res) => {
     if (!s3Filename) {
       return res.status(500).json({ message: "Failed to upload image to S3" });
     }
-    const documentData = {
+    const savedDocument = await Document.create({
       name: image.originalname,
       filename: s3Filename,
       email,
-    };
-    const savedDocument = await Document.create(documentData);
+    });
     if (!savedDocument) {
       return res.status(500).json({ message: "Failed to save document" });
     }
 
+    
+
+    // Prepare assignedProperties as array of strings
+    let assignedProperties = [];
+
     // Create user
-    const userData = {
+    const savedUser = await User.create({
       email,
       first_name,
       gender,
@@ -55,37 +60,13 @@ router.post('/add', upload.single('image'), jwtMiddleware, async (req, res) => {
       role,
       image: savedDocument._id,
       password: hashedPassword,
-    };
-    const savedUser = await User.create(userData);
+    });
 
-    // Prepare properties array (ensure it's an array of ObjectIds)
-   let assignedProperties = [];
-if (properties) {
-  if (Array.isArray(properties)) {
-    assignedProperties = properties;
-  } else if (typeof properties === "string") {
-    // Handle stringified array or comma-separated string
-    let parsed;
-    try {
-      parsed = JSON.parse(properties);
-      if (Array.isArray(parsed)) {
-        assignedProperties = parsed;
-      } else {
-        // fallback: comma-separated string
-        assignedProperties = properties.split(',').map(id => id.trim());
-      }
-    } catch {
-      // fallback: comma-separated string
-      assignedProperties = properties.split(',').map(id => id.trim());
-    }
-  }
-}
-
-    const agentData = {
+    // Create agent
+    await Agent.create({
       user: savedUser._id,
       assignedProperties,
-    };
-    await Agent.create(agentData);
+    });
 
     return res.status(201).json({ message: "Agent created successfully" });
   } catch (err) {
