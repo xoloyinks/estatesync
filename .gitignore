@@ -10,6 +10,12 @@
 !.yarn/releases
 !.yarn/versions
 
+
+# env files
+.env
+.env.*
+!.env.example
+
 # testing
 /coverage
 
@@ -40,7 +46,3 @@ yarn-error.log*
 next-env.d.ts
 config.bat
 
-# env files
-.env
-.env.*
-!.env.example
