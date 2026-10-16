@@ -13,16 +13,16 @@ const messageSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    trim: true, // Allow empty content for file messages
+    trim: true, 
   },
   documentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Document",
-    default: null, // For file messages
+    default: null, 
   },
   fileType: {
     type: String,
-    default: null, // e.g., "image/jpeg", "application/pdf"
+    default: null, 
   },
   fileName: {
     type: String,

@@ -18,7 +18,6 @@ const tenantSchema = new mongoose.Schema({
     }
 }, {collection: 'tenants'})
 
-// Apply the autopopulate plugin to the schema
 tenantSchema.plugin(autopopulate);
 
 const Tenant = mongoose.model("Tenant", tenantSchema);

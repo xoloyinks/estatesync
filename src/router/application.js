@@ -33,6 +33,7 @@ router.post('/', jwtMiddleware, upload.single('image'), async (req, res) => {
             code,
             property,
             payment: "pending",
+            
         }
 
         const savedApplication = await Application.create(application);

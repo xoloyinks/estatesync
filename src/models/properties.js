@@ -25,7 +25,7 @@ const propertySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    autopopulate: true, // Automatically populate the agent field with User data
+    autopopulate: true, 
   },
   mode: {
     type: String,
@@ -39,11 +39,11 @@ const propertySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     autopopulate: true,
-    required: false, // Optional field
+    required: false, 
   },
   planCode:{
     type: String,
-    required: true, // Optional field
+    required: true, 
   },
   createdAt: {
     type: Date,
@@ -51,7 +51,6 @@ const propertySchema = new mongoose.Schema({
   },
 }, { collection: 'properties' });
 
-// Apply the autopopulate plugin to the schema
 propertySchema.plugin(autopopulate);
 
 const Property = mongoose.model("Property", propertySchema);

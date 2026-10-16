@@ -14,16 +14,16 @@ const initializeSocket = (io) => {
 
   io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}, User ID: ${socket.user.id}`);
-    let myid; // Variable to store userId for later use
+    let myid; 
     socket.on("join", (userId) => {
-      myid = userId; // Store userId in a variable for later use
+      myid = userId; 
       console.log(`Join request: userId=${userId}, socket.id=${socket.id}, authId=${socket.user?.id}`);
       if (!userId) {
         console.error("No userId provided");
         socket.emit("error", "No userId provided");
         return;
       }
-      const userIdStr = userId.toString(); // Ensure userId is a string
+      const userIdStr = userId.toString(); 
       if (userIdStr !== socket.user?.id?.toString()) {
         console.error("Unauthorized join attempt", { userId, authId: socket.user?.id });
         socket.emit("error", "Unauthorized join attempt");
@@ -32,7 +32,7 @@ const initializeSocket = (io) => {
       const room = `user:${userIdStr}`;
       socket.join(room);
       console.log(`User ${userIdStr} joined room ${room}`);
-      console.log("Socket rooms:", Array.from(socket.rooms)); // Should include socket.id and room
+      console.log("Socket rooms:", Array.from(socket.rooms)); 
       const clients = io.sockets.adapter.rooms.get(room);
       console.log(`Clients in ${room}:`, clients ? Array.from(clients) : "None");
       logRoomClients(room);

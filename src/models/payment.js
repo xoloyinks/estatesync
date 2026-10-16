@@ -47,7 +47,6 @@ const paymentSchema = new mongoose.Schema({
 
 }, {collection: 'payments'});
 
-// Apply the autopopulate plugin to the schema
 paymentSchema.plugin(autopopulate);
 
 const Payment = mongoose.model("Payment", paymentSchema);

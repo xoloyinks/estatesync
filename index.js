@@ -53,6 +53,10 @@ server.get("/", (req, res) => {
   res.send("Welcome to the Server!");
 });
 
+server.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK", message: "Server is healthy" });
+});
+
 // Middleware to capture raw body for Paystack signature verification
 function rawBodySaver(req, res, buf) {
   if (buf && buf.length) {

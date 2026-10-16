@@ -14,6 +14,6 @@ export default function jwtMiddleware(req, res, next) {
         }
         req.user = decoded; 
         next(); 
+        
     })
-  
 }

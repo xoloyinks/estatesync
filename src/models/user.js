@@ -40,7 +40,6 @@ const userSchema = new mongoose.Schema({
   },
 }, { collection: 'users' });
 
-// Apply the autopopulate plugin to the schema
 userSchema.plugin(autopopulate);
 
 const User = mongoose.model("User", userSchema);
