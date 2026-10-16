@@ -46,7 +46,6 @@ io.use(async (socket, next) => {
   }
 });
 
-// Initialize Socket.IO handlers
 initializeSocket(io);
 
 server.get("/", (req, res) => {
@@ -57,7 +56,7 @@ server.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is healthy" });
 });
 
-// Middleware to capture raw body for Paystack signature verification
+
 function rawBodySaver(req, res, buf) {
   if (buf && buf.length) {
     req.rawBody = buf.toString("utf8");
